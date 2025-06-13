@@ -1,0 +1,203 @@
+{% extends 'finance/base.html' %}
+{% load static %}
+
+{% block title %}Hisse Senedi Tahmin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        {% if searched %}
+                            {{ company_name }} ({{ symbol }})
+                        {% else %}
+                            Hisse Senedi Tahmin
+                        {% endif %}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    {% if searched %}
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Güncel Fiyat</h5>
+                                        <h2 class="mb-0">${{ current_price|floatformat:2 }}</h2>
+                                        <p class="mb-0 {% if change > 0 %}text-success{% else %}text-danger{% endif %}">
+                                            {{ change|floatformat:2 }}%
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Teknik Göstergeler</h5>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <p class="mb-1">RSI: {{ rsi }}</p>
+                                                <p class="mb-1">MACD: {{ macd }}</p>
+                                            </div>
+                                            <div class="col-6">
+                                                <p class="mb-1">Üst Bant: {{ upper_band }}</p>
+                                                <p class="mb-1">Alt Bant: {{ lower_band }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Fiyat Tahminleri</h5>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <p class="mb-1">1 Günlük: ${{ prediction_1d }}</p>
+                                                <p class="mb-1">7 Günlük: ${{ prediction_7d }}</p>
+                                            </div>
+                                            <div class="col-6">
+                                                <p class="mb-1">Doğruluk: %{{ accuracy }}</p>
+                                                <p class="mb-1">MAE: {{ mae }}</p>
+                                                <p class="mb-1">R²: {{ r2 }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Fiyat Grafiği</h5>
+                                        <div id="price-chart"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">RSI Göstergesi</h5>
+                                        <div id="rsi-chart"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">MACD Göstergesi</h5>
+                                        <div id="macd-chart"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Bollinger Bantları</h5>
+                                        <div id="bollinger-chart"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <form method="get" class="mb-4">
+                            <div class="input-group">
+                                <input type="text" name="symbol" class="form-control" placeholder="Hisse senedi sembolü girin (örn: AAPL)" required>
+                                <div class="input-group-append">
+                                    <button type="submit" class="btn btn-primary">Ara</button>
+                                </div>
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if searched %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+    // Fiyat grafiği
+    var priceData = {{ price_data|safe }};
+    var layout = {
+        title: 'Fiyat Grafiği',
+        xaxis: { title: 'Tarih' },
+        yaxis: { title: 'Fiyat ($)' }
+    };
+    Plotly.newPlot('price-chart', [priceData], layout);
+
+    // RSI grafiği
+    var rsiData = {{ rsi_data|safe }};
+    var rsiLayout = {
+        title: 'RSI Göstergesi',
+        xaxis: { title: 'Tarih' },
+        yaxis: { 
+            title: 'RSI',
+            range: [0, 100]
+        }
+    };
+    Plotly.newPlot('rsi-chart', [rsiData], rsiLayout);
+
+    // MACD grafiği
+    var macdData = {{ macd_data|safe }};
+    var macdTrace1 = {
+        x: macdData.x,
+        y: macdData.macd,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'MACD'
+    };
+    var macdTrace2 = {
+        x: macdData.x,
+        y: macdData.signal,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Sinyal'
+    };
+    var macdLayout = {
+        title: 'MACD Göstergesi',
+        xaxis: { title: 'Tarih' },
+        yaxis: { title: 'Değer' }
+    };
+    Plotly.newPlot('macd-chart', [macdTrace1, macdTrace2], macdLayout);
+
+    // Bollinger Bantları grafiği
+    var bollingerData = {{ bollinger_data|safe }};
+    var bollingerTrace1 = {
+        x: bollingerData.x,
+        y: bollingerData.upper,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Üst Bant',
+        line: {color: 'red'}
+    };
+    var bollingerTrace2 = {
+        x: bollingerData.x,
+        y: bollingerData.lower,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Alt Bant',
+        line: {color: 'green'}
+    };
+    var bollingerLayout = {
+        title: 'Bollinger Bantları',
+        xaxis: { title: 'Tarih' },
+        yaxis: { title: 'Fiyat ($)' }
+    };
+    Plotly.newPlot('bollinger-chart', [bollingerTrace1, bollingerTrace2], bollingerLayout);
+</script>
+{% endif %}
+{% endblock %} 

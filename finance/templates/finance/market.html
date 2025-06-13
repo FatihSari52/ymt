@@ -1,0 +1,169 @@
+{% extends 'finance/base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Hisse Senedi Arama Bölümü -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h3 class="text-center mb-4">Hisse Senedi Analizi</h3>
+                    <form method="get" action="{% url 'stock_predictor' %}" class="row g-3">
+                        <div class="col-md-8">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control form-control-lg" 
+                                       name="symbol" placeholder="Hisse senedi sembolü girin (örn: AAPL, MSFT, GOOGL)" 
+                                       required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary btn-lg w-100">Analiz Et</button>
+                        </div>
+                    </form>
+                    <div class="mt-3">
+                        <p class="text-muted text-center mb-0">
+                            Popüler hisseler: 
+                            <a href="{% url 'stock_predictor' %}?symbol=AAPL">AAPL</a>, 
+                            <a href="{% url 'stock_predictor' %}?symbol=MSFT">MSFT</a>, 
+                            <a href="{% url 'stock_predictor' %}?symbol=GOOGL">GOOGL</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Piyasa Özeti -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">S&P 500</h5>
+                    <h3 class="{% if sp500_change >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        {{ sp500_value }}
+                        <small>({{ sp500_change }}%)</small>
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">NASDAQ</h5>
+                    <h3 class="{% if nasdaq_change >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        {{ nasdaq_value }}
+                        <small>({{ nasdaq_change }}%)</small>
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">DOW JONES</h5>
+                    <h3 class="{% if dow_change >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        {{ dow_value }}
+                        <small>({{ dow_change }}%)</small>
+                    </h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popüler Hisseler -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4 class="card-title mb-0">Popüler Hisseler</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Sembol</th>
+                            <th>Şirket</th>
+                            <th>Fiyat</th>
+                            <th>Değişim</th>
+                            <th>Hacim</th>
+                            <th>Piyasa Değeri</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stock in market_data %}
+                        <tr>
+                            <td>{{ stock.symbol }}</td>
+                            <td>{{ stock.company_name }}</td>
+                            <td>{{ stock.price }}</td>
+                            <td class="{% if stock.change >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ stock.change }}%
+                            </td>
+                            <td>{{ stock.volume }}</td>
+                            <td>{{ stock.market_cap }}</td>
+                            <td>
+                                <a href="{% url 'stock_predictor' %}?symbol={{ stock.symbol }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-chart-line"></i> Analiz
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Piyasa Haberleri -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Finans Haberleri</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <a href="https://www.bloomberg.com/markets" target="_blank" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
+                                <i class="fas fa-newspaper fa-2x mb-2"></i>
+                                <span>Bloomberg Markets</span>
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="https://www.cnbc.com/markets/" target="_blank" class="btn btn-outline-danger w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
+                                <i class="fas fa-chart-line fa-2x mb-2"></i>
+                                <span>CNBC Markets</span>
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="https://finance.yahoo.com/news/" target="_blank" class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
+                                <i class="fas fa-globe fa-2x mb-2"></i>
+                                <span>Yahoo Finance</span>
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="https://www.reuters.com/markets/" target="_blank" class="btn btn-outline-info w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
+                                <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                                <span>Reuters Markets</span>
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="https://www.marketwatch.com/" target="_blank" class="btn btn-outline-warning w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
+                                <i class="fas fa-search-dollar fa-2x mb-2"></i>
+                                <span>MarketWatch</span>
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="https://www.ft.com/markets" target="_blank" class="btn btn-outline-dark w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4">
+                                <i class="fas fa-landmark fa-2x mb-2"></i>
+                                <span>Financial Times</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %} 
