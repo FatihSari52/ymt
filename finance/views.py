@@ -731,11 +731,19 @@ def stock_predictor_view(request):
             last_year_upper = upper_band.iloc[-252:].tolist()
             last_year_lower = lower_band.iloc[-252:].tolist()
             
+            # OHLC verilerini al
+            last_year_open = df['Open'].iloc[-252:].tolist()
+            last_year_high = df['High'].iloc[-252:].tolist()
+            last_year_low = df['Low'].iloc[-252:].tolist()
+            last_year_close = df['Close'].iloc[-252:].tolist()
+            
             price_data = {
                 'x': last_year_dates,
-                'y': last_year_prices,
-                'type': 'scatter',
-                'mode': 'lines',
+                'open': last_year_open,
+                'high': last_year_high,
+                'low': last_year_low,
+                'close': last_year_close,
+                'type': 'candlestick',
                 'name': 'Fiyat'
             }
             
@@ -762,7 +770,10 @@ def stock_predictor_view(request):
             # Tüm verileri bir DataFrame'de birleştir
             df_indicators = pd.DataFrame({
                 'Date': last_year_dates,
-                'Close': last_year_prices,
+                'Open': last_year_open,
+                'High': last_year_high,
+                'Low': last_year_low,
+                'Close': last_year_close,
                 'RSI': last_year_rsi,
                 'MACD': last_year_macd,
                 'Signal': last_year_signal,
@@ -777,7 +788,10 @@ def stock_predictor_view(request):
             df_indicators = df_indicators.interpolate(method='linear')  # NaN değerleri çevresindeki değerlerin ortalaması ile doldur
             
             # Grafik verilerini güncelle
-            price_data['y'] = df_indicators['Close'].tolist()
+            price_data['open'] = df_indicators['Open'].tolist()
+            price_data['high'] = df_indicators['High'].tolist()
+            price_data['low'] = df_indicators['Low'].tolist()
+            price_data['close'] = df_indicators['Close'].tolist()
             rsi_data['y'] = df_indicators['RSI'].tolist()
             macd_data['macd'] = df_indicators['MACD'].tolist()
             macd_data['signal'] = df_indicators['Signal'].tolist()

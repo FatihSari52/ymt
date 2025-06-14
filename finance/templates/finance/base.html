@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,12 +14,26 @@
             --background-color: #f8f9fa;
             --text-color: #2c3e50;
             --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --card-bg: #ffffff;
+            --table-bg: #ffffff;
+        }
+
+        [data-bs-theme="dark"] {
+            --primary-color: #1a1a1a;
+            --secondary-color: #2980b9;
+            --accent-color: #c0392b;
+            --background-color: #121212;
+            --text-color: #ffffff;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            --card-bg: #1e1e1e;
+            --table-bg: #1e1e1e;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--background-color);
             color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .navbar {
@@ -47,6 +61,7 @@
             border-radius: 15px;
             box-shadow: var(--card-shadow);
             transition: transform 0.3s ease;
+            background-color: var(--card-bg);
         }
 
         .card:hover {
@@ -81,10 +96,11 @@
         }
 
         .table {
-            background: white;
+            background: var(--table-bg);
             border-radius: 15px;
             overflow: hidden;
             box-shadow: var(--card-shadow);
+            color: var(--text-color);
         }
 
         .table thead {
@@ -111,6 +127,8 @@
             border-radius: 15px;
             border: none;
             box-shadow: var(--card-shadow);
+            background-color: var(--card-bg);
+            color: var(--text-color);
         }
 
         .modal-header {
@@ -124,6 +142,8 @@
             border: 2px solid #e9ecef;
             padding: 12px;
             transition: all 0.3s ease;
+            background-color: var(--card-bg);
+            color: var(--text-color);
         }
 
         .form-control:focus {
@@ -145,6 +165,20 @@
         .alert-danger {
             background: linear-gradient(135deg, #e74c3c, #c0392b);
             color: white;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(30deg);
         }
     </style>
     {% block extra_css %}{% endblock %}
@@ -184,6 +218,11 @@
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <button class="theme-toggle" id="themeToggle" title="Tema Değiştir">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                    </li>
                     {% if user.is_authenticated %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
@@ -231,6 +270,33 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('themeToggle');
+            const html = document.documentElement;
+            const icon = themeToggle.querySelector('i');
+
+            // Check for saved theme preference
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                html.setAttribute('data-bs-theme', savedTheme);
+                updateIcon(savedTheme);
+            }
+
+            themeToggle.addEventListener('click', function() {
+                const currentTheme = html.getAttribute('data-bs-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                html.setAttribute('data-bs-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateIcon(newTheme);
+            });
+
+            function updateIcon(theme) {
+                icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            }
+        });
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html> 
