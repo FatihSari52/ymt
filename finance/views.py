@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 import plotly.graph_objects as go
 import plotly.express as px
 import json
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from ta.trend import SMAIndicator, EMAIndicator, MACD
 from ta.momentum import RSIIndicator
 import requests
@@ -25,6 +25,7 @@ import random
 from django.core.cache import cache
 from django.conf import settings
 import time
+from django.contrib.auth.models import User
 
 def calculate_rsi(prices, period=14):
     delta = prices.diff()
@@ -49,64 +50,130 @@ def calculate_bollinger_bands(prices, period=20, std_dev=2):
     return upper_band, lower_band
 
 def get_market_data():
-    symbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA']
-    market_data = []
+    """Get real-time market data for popular stocks"""
+    stocks = [
+        ('AAPL', 'Apple Inc.'),
+        ('MSFT', 'Microsoft Corporation'),
+        ('GOOGL', 'Alphabet Inc.'),
+        ('AMZN', 'Amazon.com Inc.'),
+        ('META', 'Meta Platforms Inc.'),
+        ('TSLA', 'Tesla Inc.'),
+        ('NVDA', 'NVIDIA Corporation'),
+        ('AMD', 'Advanced Micro Devices'),
+        ('INTC', 'Intel Corporation'),
+        ('RTX', 'Raytheon Technologies'),
+        ('LMT', 'Lockheed Martin'),
+        ('NOC', 'Northrop Grumman'),
+        ('GE', 'General Electric')
+    ]
     
-    for symbol in symbols:
+    market_data = []
+    for symbol, company_name in stocks:
         try:
             stock = yf.Ticker(symbol)
             info = stock.info
+            
+            # Get current price and previous close
+            current_price = info.get('regularMarketPrice', 0)
+            prev_close = info.get('regularMarketPreviousClose', current_price)
+            
+            # Calculate percentage change
+            if prev_close and prev_close != 0:
+                change = ((current_price - prev_close) / prev_close) * 100
+            else:
+                change = 0
+            
             market_data.append({
                 'symbol': symbol,
-                'company_name': info.get('longName', symbol),
-                'price': round(info.get('currentPrice', 0), 2),
-                'change': round(info.get('regularMarketChangePercent', 0), 2),
+                'company_name': company_name,
+                'price': current_price,
+                'change': change,
                 'volume': info.get('regularMarketVolume', 0),
                 'market_cap': info.get('marketCap', 0)
             })
-        except:
+        except Exception as e:
+            print(f"Error fetching data for {symbol}: {str(e)}")
             continue
     
     return market_data
 
 def index_view(request):
-    # Örnek piyasa verileri
-    market_data = [
-        {'symbol': 'AAPL', 'company_name': 'Apple Inc.', 'price': 175.50, 'change': 1.2, 'volume': '45.2M', 'market_cap': '2.8T'},
-        {'symbol': 'MSFT', 'company_name': 'Microsoft Corp.', 'price': 380.25, 'change': 0.8, 'volume': '22.1M', 'market_cap': '2.8T'},
-        {'symbol': 'GOOGL', 'company_name': 'Alphabet Inc.', 'price': 140.75, 'change': -0.5, 'volume': '18.5M', 'market_cap': '1.8T'},
-        {'symbol': 'AMZN', 'company_name': 'Amazon.com Inc.', 'price': 175.25, 'change': 1.5, 'volume': '35.8M', 'market_cap': '1.8T'},
-        {'symbol': 'META', 'company_name': 'Meta Platforms Inc.', 'price': 380.50, 'change': 2.1, 'volume': '28.3M', 'market_cap': '950B'},
-    ]
-    return render(request, 'finance/index.html', {'market_data': market_data})
+    # Get real-time market data
+    market_data = get_market_data()
+    
+    # Get market indices
+    try:
+        sp500 = yf.Ticker("^GSPC")
+        nasdaq = yf.Ticker("^IXIC")
+        dow = yf.Ticker("^DJI")
+        
+        sp500_info = sp500.info
+        nasdaq_info = nasdaq.info
+        dow_info = dow.info
+        
+        context = {
+            'market_data': market_data,
+            'sp500_value': round(sp500_info.get('regularMarketPrice', 0), 2),
+            'sp500_change': round(sp500_info.get('regularMarketChangePercent', 0), 2),
+            'nasdaq_value': round(nasdaq_info.get('regularMarketPrice', 0), 2),
+            'nasdaq_change': round(nasdaq_info.get('regularMarketChangePercent', 0), 2),
+            'dow_value': round(dow_info.get('regularMarketPrice', 0), 2),
+            'dow_change': round(dow_info.get('regularMarketChangePercent', 0), 2),
+        }
+    except Exception as e:
+        print(f"Market indices error: {str(e)}")
+        context = {
+            'market_data': market_data,
+            'sp500_value': 0,
+            'sp500_change': 0,
+            'nasdaq_value': 0,
+            'nasdaq_change': 0,
+            'dow_value': 0,
+            'dow_change': 0,
+        }
+    
+    return render(request, 'finance/index.html', context)
 
+@ensure_csrf_cookie
 def register_view(request):
     if request.method == 'POST':
-        form = UserRegistrationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            Portfolio.objects.create(user=user)
-            login(request, user)
-            return redirect('dashboard')
-    else:
-        form = UserRegistrationForm()
-    return render(request, 'finance/register.html', {'form': form})
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password1 = request.POST.get('password1')
+        password2 = request.POST.get('password2')
+        
+        if password1 != password2:
+            messages.error(request, 'Şifreler eşleşmiyor.')
+            return render(request, 'finance/register.html')
+        
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Bu kullanıcı adı zaten kullanılıyor.')
+            return render(request, 'finance/register.html')
+        
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Bu e-posta adresi zaten kullanılıyor.')
+            return render(request, 'finance/register.html')
+        
+        user = User.objects.create_user(username=username, email=email, password=password1)
+        login(request, user)
+        return redirect('index')
+    
+    return render(request, 'finance/register.html')
 
+@ensure_csrf_cookie
 def login_view(request):
     if request.method == 'POST':
-        form = UserLoginForm(request.POST)
-        if form.is_valid():
-            username = form.cleaned_data['username']
-            password = form.cleaned_data['password']
-            user = authenticate(username=username, password=password)
-            if user is not None:
-                login(request, user)
-                return redirect('dashboard')
-            else:
-                messages.error(request, 'Geçersiz kullanıcı adı veya şifre.')
-    else:
-        form = UserLoginForm()
-    return render(request, 'finance/login.html', {'form': form})
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            login(request, user)
+            return redirect('index')
+        else:
+            messages.error(request, 'Geçersiz kullanıcı adı veya şifre.')
+    
+    return render(request, 'finance/login.html')
 
 @login_required
 def logout_view(request):
