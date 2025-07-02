@@ -1,0 +1,640 @@
+{% extends 'finance/base.html' %}
+{% load static %}
+
+{% block title %}Hisse Senedi Tahmin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        {% if searched %}
+                            {{ company_name }} ({{ symbol }})
+                        {% else %}
+                            Hisse Senedi Tahmin
+                        {% endif %}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    {% if searched %}
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="card info-card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Güncel Fiyat</h5>
+                                        <h2 class="mb-0 price-value">${{ current_price|floatformat:2 }}</h2>
+                                        <p class="mb-0 change-value {% if change > 0 %}text-success{% else %}text-danger{% endif %}">
+                                            {{ change|floatformat:2 }}%
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card info-card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Teknik Göstergeler</h5>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <p class="mb-1 indicator-value">RSI: {{ rsi }}</p>
+                                                <p class="mb-1 indicator-value">MACD: {{ macd }}</p>
+                                            </div>
+                                            <div class="col-6">
+                                                <p class="mb-1 indicator-value">Üst Bant: {{ upper_band }}</p>
+                                                <p class="mb-1 indicator-value">Alt Bant: {{ lower_band }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="card info-card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Fiyat Tahminleri</h5>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <p class="mb-1 indicator-value">1 Günlük: ${{ prediction_1d }}</p>
+                                                <p class="mb-1 indicator-value">7 Günlük: ${{ prediction_7d }}</p>
+                                            </div>
+                                            <div class="col-6">
+                                                <p class="mb-1 indicator-value">Doğruluk: %{{ accuracy }}</p>
+                                                <p class="mb-1 indicator-value">MAE: {{ mae }}</p>
+                                                <p class="mb-1 indicator-value">R²: {{ r2 }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 class="card-title mb-0">Teknik Analiz Grafiği</h5>
+                                            <div class="btn-group">
+                                                <button class="btn btn-outline-primary" id="toggle-indicators">
+                                                    <i class="fas fa-chart-line"></i> Göstergeler
+                                                </button>
+                                                <button class="btn btn-outline-primary active" id="candlestick">Mum</button>
+                                                <button class="btn btn-outline-primary" id="line">Çizgi</button>
+                                            </div>
+                                        </div>
+                                        <div id="combined-chart" style="height: 800px;"></div>
+                                        
+                                        <!-- Teknik Gösterge Ekleme Bölümü -->
+                                        <div class="mt-4">
+                                            <h6>Teknik Gösterge Ekle</h6>
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <select class="form-select" id="indicator-type">
+                                                        <option value="">Gösterge Seçin</option>
+                                                        <optgroup label="Trend">
+                                                            <option value="sma">Basit Hareketli Ortalama (SMA)</option>
+                                                            <option value="ema">Üstel Hareketli Ortalama (EMA)</option>
+                                                            <option value="wma">Ağırlıklı Hareketli Ortalama (WMA)</option>
+                                                            <option value="vwma">Hacim Ağırlıklı Hareketli Ortalama (VWMA)</option>
+                                                            <option value="ichimoku">Ichimoku Cloud</option>
+                                                            <option value="supertrend">SuperTrend</option>
+                                                            <option value="adx">Ortalama Yön Endeksi (ADX)</option>
+                                                            <option value="dmi">Yön Hareketi Endeksi (DMI)</option>
+                                                        </optgroup>
+                                                        <optgroup label="Momentum">
+                                                            <option value="rsi">Göreceli Güç Endeksi (RSI)</option>
+                                                            <option value="macd">MACD</option>
+                                                            <option value="stochastic">Stokastik Osilatör</option>
+                                                            <option value="cci">Emtia Kanal Endeksi (CCI)</option>
+                                                            <option value="mfi">Para Akışı Endeksi (MFI)</option>
+                                                            <option value="williams_r">Williams %R</option>
+                                                            <option value="roc">Değişim Oranı (ROC)</option>
+                                                            <option value="momentum">Momentum</option>
+                                                        </optgroup>
+                                                        <optgroup label="Volatilite">
+                                                            <option value="bollinger">Bollinger Bantları</option>
+                                                            <option value="keltner">Keltner Kanalları</option>
+                                                            <option value="donchian">Donchian Kanalları</option>
+                                                            <option value="atr">Ortalama Gerçek Aralık (ATR)</option>
+                                                            <option value="standard_deviation">Standart Sapma</option>
+                                                            <option value="bollinger_width">Bollinger Bant Genişliği</option>
+                                                            <option value="bollinger_percent">Bollinger Yüzde B</option>
+                                                        </optgroup>
+                                                        <optgroup label="Hacim">
+                                                            <option value="obv">On-Balance Volume (OBV)</option>
+                                                            <option value="vpt">Hacim Fiyat Trendi (VPT)</option>
+                                                            <option value="cmf">Chaikin Para Akışı (CMF)</option>
+                                                            <option value="mfi">Para Akışı Endeksi (MFI)</option>
+                                                            <option value="ad">Birikim/Dağıtım (A/D)</option>
+                                                            <option value="volume_sma">Hacim SMA</option>
+                                                            <option value="volume_ema">Hacim EMA</option>
+                                                        </optgroup>
+                                                        <optgroup label="Fibonacci">
+                                                            <option value="fib_retracement">Fibonacci Geri Çekilme</option>
+                                                            <option value="fib_extension">Fibonacci Uzantı</option>
+                                                            <option value="fib_time">Fibonacci Zaman</option>
+                                                        </optgroup>
+                                                        <optgroup label="Özel">
+                                                            <option value="pivot_points">Pivot Noktaları</option>
+                                                            <option value="support_resistance">Destek/Direnç Seviyeleri</option>
+                                                            <option value="price_channels">Fiyat Kanalları</option>
+                                                            <option value="price_action">Fiyat Aksiyonu</option>
+                                                        </optgroup>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control" id="indicator-period" placeholder="Periyot" min="1" value="14">
+                                                        <input type="number" class="form-control" id="indicator-period2" placeholder="Periyot 2" min="1" style="display: none;">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control" id="indicator-multiplier" placeholder="Çarpan" min="0.1" step="0.1" value="2" style="display: none;">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <button class="btn btn-primary w-100" id="add-indicator">Gösterge Ekle</button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Eklenen Göstergeler Listesi -->
+                                        <div class="mt-4">
+                                            <h6>Eklenen Göstergeler</h6>
+                                            <div id="added-indicators" class="list-group">
+                                                <!-- Göstergeler buraya dinamik olarak eklenecek -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <form method="get" class="mb-4">
+                            <div class="input-group">
+                                <input type="text" name="symbol" class="form-control" placeholder="Hisse senedi sembolü girin (örn: AAPL)" required>
+                                <div class="input-group-append">
+                                    <button type="submit" class="btn btn-primary">Ara</button>
+                                </div>
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .info-card {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+
+    .info-card .card-title {
+        color: var(--text-color);
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+
+    .price-value {
+        color: var(--text-color);
+        font-size: 2rem;
+        font-weight: 600;
+    }
+
+    .change-value {
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+
+    .indicator-value {
+        color: var(--text-color);
+        font-size: 1rem;
+    }
+
+    [data-bs-theme="dark"] .info-card {
+        background-color: var(--card-bg);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    [data-bs-theme="dark"] .price-value,
+    [data-bs-theme="dark"] .indicator-value {
+        color: var(--text-color);
+    }
+
+    [data-bs-theme="dark"] .text-success {
+        color: #4CAF50 !important;
+    }
+
+    [data-bs-theme="dark"] .text-danger {
+        color: #f44336 !important;
+    }
+
+    .btn-group .btn {
+        min-width: 80px;
+    }
+
+    .indicator-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 0.25rem;
+        transition: all 0.3s ease;
+    }
+
+    .indicator-item:hover {
+        background-color: var(--hover-bg);
+    }
+
+    .indicator-item .indicator-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .indicator-item .indicator-name {
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+
+    .indicator-item .indicator-settings {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+    }
+
+    .indicator-item .indicator-controls {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .indicator-item button {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .indicator-item .btn-outline-primary:hover {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .indicator-item .btn-outline-danger:hover {
+        background-color: var(--danger-color);
+        border-color: var(--danger-color);
+    }
+</style>
+
+{% if searched %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+    let currentChartType = 'candlestick';
+    let showIndicators = true;
+    let priceData = {{ price_data|safe }};
+    let bollingerData = {{ bollinger_data|safe }};
+    let addedIndicators = [];
+
+    function createChart() {
+        const data = [];
+        
+        // Fiyat verisi
+        if (currentChartType === 'candlestick') {
+            data.push({
+                x: priceData.x,
+                open: priceData.open,
+                high: priceData.high,
+                low: priceData.low,
+                close: priceData.close,
+                type: 'candlestick',
+                name: 'Fiyat',
+                yaxis: 'y',
+                increasing: {line: {color: '#26a69a'}},
+                decreasing: {line: {color: '#ef5350'}}
+            });
+        } else {
+            data.push({
+                x: priceData.x,
+                y: priceData.close,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Fiyat',
+                yaxis: 'y',
+                line: {
+                    color: '#2962FF',
+                    width: 2
+                }
+            });
+        }
+
+        if (showIndicators) {
+            // Bollinger Bantları
+            data.push({
+                x: bollingerData.x,
+                y: bollingerData.upper,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Üst Bant',
+                yaxis: 'y',
+                line: {
+                    color: '#E91E63',
+                    width: 1,
+                    dash: 'dash'
+                }
+            });
+
+            data.push({
+                x: bollingerData.x,
+                y: bollingerData.lower,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Alt Bant',
+                yaxis: 'y',
+                line: {
+                    color: '#E91E63',
+                    width: 1,
+                    dash: 'dash'
+                }
+            });
+
+            // Eklenen göstergeleri ekle
+            addedIndicators.forEach(indicator => {
+                if (indicator.visible) {
+                    data.push(indicator.trace);
+                }
+            });
+        }
+
+        // Grafik düzeni
+        const layout = {
+            title: '{{ symbol }} Teknik Analiz',
+            height: 800,
+            showlegend: true,
+            legend: {
+                orientation: 'h',
+                y: 1.1
+            },
+            grid: {
+                rows: 1,
+                columns: 1,
+                pattern: 'independent'
+            },
+            xaxis: {
+                title: 'Tarih',
+                rangeslider: {
+                    visible: true
+                },
+                domain: [0, 1]
+            },
+            yaxis: {
+                title: 'Fiyat ($)',
+                domain: [0, 1]
+            }
+        };
+
+        Plotly.newPlot('combined-chart', data, layout);
+    }
+
+    // Gösterge türüne göre ek alanları göster/gizle
+    document.getElementById('indicator-type').addEventListener('change', function() {
+        const type = this.value;
+        const period2Input = document.getElementById('indicator-period2');
+        const multiplierInput = document.getElementById('indicator-multiplier');
+
+        // Varsayılan olarak tüm ek alanları gizle
+        period2Input.style.display = 'none';
+        multiplierInput.style.display = 'none';
+
+        // Gösterge türüne göre ek alanları göster
+        switch(type) {
+            case 'macd':
+            case 'stochastic':
+            case 'ichimoku':
+                period2Input.style.display = 'block';
+                break;
+            case 'bollinger':
+            case 'keltner':
+            case 'donchian':
+                multiplierInput.style.display = 'block';
+                break;
+        }
+    });
+
+    function addIndicator(type, period, period2 = null, multiplier = null) {
+        const indicatorNames = {
+            'sma': 'Basit Hareketli Ortalama',
+            'ema': 'Üstel Hareketli Ortalama',
+            'wma': 'Ağırlıklı Hareketli Ortalama',
+            'vwma': 'Hacim Ağırlıklı Hareketli Ortalama',
+            'ichimoku': 'Ichimoku Cloud',
+            'supertrend': 'SuperTrend',
+            'adx': 'Ortalama Yön Endeksi',
+            'dmi': 'Yön Hareketi Endeksi',
+            'rsi': 'Göreceli Güç Endeksi',
+            'macd': 'MACD',
+            'stochastic': 'Stokastik Osilatör',
+            'cci': 'Emtia Kanal Endeksi',
+            'mfi': 'Para Akışı Endeksi',
+            'williams_r': 'Williams %R',
+            'roc': 'Değişim Oranı',
+            'momentum': 'Momentum',
+            'bollinger': 'Bollinger Bantları',
+            'keltner': 'Keltner Kanalları',
+            'donchian': 'Donchian Kanalları',
+            'atr': 'Ortalama Gerçek Aralık',
+            'standard_deviation': 'Standart Sapma',
+            'bollinger_width': 'Bollinger Bant Genişliği',
+            'bollinger_percent': 'Bollinger Yüzde B',
+            'obv': 'On-Balance Volume',
+            'vpt': 'Hacim Fiyat Trendi',
+            'cmf': 'Chaikin Para Akışı',
+            'ad': 'Birikim/Dağıtım',
+            'volume_sma': 'Hacim SMA',
+            'volume_ema': 'Hacim EMA',
+            'fib_retracement': 'Fibonacci Geri Çekilme',
+            'fib_extension': 'Fibonacci Uzantı',
+            'fib_time': 'Fibonacci Zaman',
+            'pivot_points': 'Pivot Noktaları',
+            'support_resistance': 'Destek/Direnç Seviyeleri',
+            'price_channels': 'Fiyat Kanalları',
+            'price_action': 'Fiyat Aksiyonu'
+        };
+
+        const colors = {
+            'sma': '#FF9800',
+            'ema': '#2196F3',
+            'wma': '#FFC107',
+            'vwma': '#9C27B0',
+            'ichimoku': '#4CAF50',
+            'supertrend': '#F44336',
+            'adx': '#00BCD4',
+            'dmi': '#795548',
+            'rsi': '#FF6B6B',
+            'macd': '#4CAF50',
+            'stochastic': '#E91E63',
+            'cci': '#3F51B5',
+            'mfi': '#009688',
+            'williams_r': '#FF5722',
+            'roc': '#607D8B',
+            'momentum': '#8BC34A',
+            'bollinger': '#E91E63',
+            'keltner': '#9C27B0',
+            'donchian': '#673AB7',
+            'atr': '#FF9800',
+            'standard_deviation': '#795548',
+            'bollinger_width': '#F44336',
+            'bollinger_percent': '#E91E63',
+            'obv': '#00BCD4',
+            'vpt': '#009688',
+            'cmf': '#3F51B5',
+            'ad': '#607D8B',
+            'volume_sma': '#FF9800',
+            'volume_ema': '#2196F3',
+            'fib_retracement': '#FFC107',
+            'fib_extension': '#FF9800',
+            'fib_time': '#FFC107',
+            'pivot_points': '#4CAF50',
+            'support_resistance': '#F44336',
+            'price_channels': '#2196F3',
+            'price_action': '#9C27B0'
+        };
+
+        // Gösterge verilerini hesapla (örnek olarak)
+        const trace = {
+            x: priceData.x,
+            y: priceData.close.map((price, i) => price * (1 + Math.random() * 0.1)), // Örnek veri
+            type: 'scatter',
+            mode: 'lines',
+            name: `${indicatorNames[type]} (${period}${period2 ? `, ${period2}` : ''}${multiplier ? `, ${multiplier}x` : ''})`,
+            yaxis: 'y',
+            line: {
+                color: colors[type],
+                width: 1
+            }
+        };
+
+        const indicator = {
+            id: Date.now(),
+            type: type,
+            period: period,
+            period2: period2,
+            multiplier: multiplier,
+            name: indicatorNames[type],
+            trace: trace,
+            visible: true
+        };
+
+        addedIndicators.push(indicator);
+        updateIndicatorsList();
+        createChart();
+    }
+
+    function updateIndicatorsList() {
+        const container = document.getElementById('added-indicators');
+        container.innerHTML = '';
+
+        addedIndicators.forEach(indicator => {
+            const item = document.createElement('div');
+            item.className = 'indicator-item';
+            
+            const settings = [
+                `Periyot: ${indicator.period}`,
+                indicator.period2 ? `Periyot 2: ${indicator.period2}` : null,
+                indicator.multiplier ? `Çarpan: ${indicator.multiplier}` : null
+            ].filter(Boolean).join(' | ');
+
+            item.innerHTML = `
+                <div class="indicator-info">
+                    <span class="indicator-name">${indicator.name}</span>
+                    <span class="indicator-settings">${settings}</span>
+                </div>
+                <div class="indicator-controls">
+                    <button class="btn btn-sm btn-outline-primary toggle-indicator" data-id="${indicator.id}">
+                        ${indicator.visible ? 'Gizle' : 'Göster'}
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger remove-indicator" data-id="${indicator.id}">
+                        Kaldır
+                    </button>
+                </div>
+            `;
+            container.appendChild(item);
+        });
+
+        // Göster/Gizle butonları için event listener'ları ekle
+        document.querySelectorAll('.toggle-indicator').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = parseInt(this.dataset.id);
+                const indicator = addedIndicators.find(i => i.id === id);
+                if (indicator) {
+                    indicator.visible = !indicator.visible;
+                    this.textContent = indicator.visible ? 'Gizle' : 'Göster';
+                    createChart();
+                }
+            });
+        });
+
+        // Kaldır butonları için event listener'ları ekle
+        document.querySelectorAll('.remove-indicator').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = parseInt(this.dataset.id);
+                addedIndicators = addedIndicators.filter(i => i.id !== id);
+                updateIndicatorsList();
+                createChart();
+            });
+        });
+    }
+
+    // Sayfa yüklendiğinde grafiği oluştur
+    document.addEventListener('DOMContentLoaded', function() {
+        createChart();
+
+        // Göstergeleri aç/kapa
+        document.getElementById('toggle-indicators').addEventListener('click', function() {
+            showIndicators = !showIndicators;
+            this.classList.toggle('active');
+            createChart();
+        });
+
+        // Grafik tipi değiştirme
+        document.getElementById('candlestick').addEventListener('click', function() {
+            currentChartType = 'candlestick';
+            this.classList.add('active');
+            document.getElementById('line').classList.remove('active');
+            createChart();
+        });
+
+        document.getElementById('line').addEventListener('click', function() {
+            currentChartType = 'line';
+            this.classList.add('active');
+            document.getElementById('candlestick').classList.remove('active');
+            createChart();
+        });
+
+        // Gösterge ekleme
+        document.getElementById('add-indicator').addEventListener('click', function() {
+            const type = document.getElementById('indicator-type').value;
+            const period = parseInt(document.getElementById('indicator-period').value);
+            const period2 = parseInt(document.getElementById('indicator-period2').value) || null;
+            const multiplier = parseFloat(document.getElementById('indicator-multiplier').value) || null;
+
+            if (type && period > 0) {
+                addIndicator(type, period, period2, multiplier);
+            } else {
+                alert('Lütfen geçerli bir gösterge ve periyot seçin.');
+            }
+        });
+    });
+
+    // Grafik yeniden boyutlandırma
+    window.addEventListener('resize', function() {
+        Plotly.Plots.resize('combined-chart');
+    });
+</script>
+{% endif %}
+{% endblock %} 

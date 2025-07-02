@@ -1,0 +1,246 @@
+{% extends 'finance/base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Hero Section -->
+    <div class="row align-items-center mb-5">
+        <div class="col-md-6">
+            <h1 class="display-4 fw-bold mb-4">Finansal Piyasaları Keşfedin</h1>
+            <p class="lead mb-4">Yapay zeka destekli analizler ve tahminlerle daha akıllı yatırım kararları alın.</p>
+            <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                <a href="{% url 'market' %}" class="btn btn-primary btn-lg px-4 me-md-2">
+                    <i class="fas fa-globe me-2"></i>Piyasayı Keşfet
+                </a>
+                <a href="{% url 'register' %}" class="btn btn-outline-primary btn-lg px-4">
+                    <i class="fas fa-user-plus me-2"></i>Üye Ol
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="row mb-5">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-robot fa-3x text-primary mb-3"></i>
+                    <h4>Yapay Zeka Analizi</h4>
+                    <p class="text-muted">Gelişmiş makine öğrenmesi modelleri ile fiyat tahminleri yapın.</p>
+                    <a href="{% url 'stock_predictor' %}" class="btn btn-outline-primary mt-2">
+                        <i class="fas fa-chart-line me-2"></i>Analiz Yap
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                    <h4>Teknik Analiz</h4>
+                    <p class="text-muted">RSI, MACD ve Bollinger Bantları gibi teknik göstergeleri kullanın.</p>
+                    <a href="{% url 'analysis' %}" class="btn btn-outline-primary mt-2">
+                        <i class="fas fa-chart-bar me-2"></i>Analiz Yap
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-wallet fa-3x text-primary mb-3"></i>
+                    <h4>Portföy Yönetimi</h4>
+                    <p class="text-muted">Yatırımlarınızı takip edin ve performansını analiz edin.</p>
+                    <a href="{% url 'portfolio' %}" class="btn btn-outline-primary mt-2">
+                        <i class="fas fa-briefcase me-2"></i>Portföyüm
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Market Overview Section -->
+    <div class="card mb-5">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Piyasa Genel Bakış</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Sembol</th>
+                            <th>Fiyat</th>
+                            <th>Değişim</th>
+                            <th>Hacim</th>
+                            <th>Piyasa Değeri</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <strong>AAPL</strong>
+                                <br>
+                                <small class="text-muted">Apple Inc.</small>
+                            </td>
+                            <td>$185.92</td>
+                            <td class="text-success">↑ 2.45%</td>
+                            <td>52.3M</td>
+                            <td>$2.89T</td>
+                            <td>
+                                <a href="{% url 'stock_predictor' %}?symbol=AAPL" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-chart-line me-1"></i>Analiz Et
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>TSLA</strong>
+                                <br>
+                                <small class="text-muted">Tesla Inc.</small>
+                            </td>
+                            <td>$177.58</td>
+                            <td class="text-danger">↓ 1.23%</td>
+                            <td>98.7M</td>
+                            <td>$564.2B</td>
+                            <td>
+                                <a href="{% url 'stock_predictor' %}?symbol=TSLA" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-chart-line me-1"></i>Analiz Et
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>META</strong>
+                                <br>
+                                <small class="text-muted">Meta Platforms</small>
+                            </td>
+                            <td>$485.09</td>
+                            <td class="text-success">↑ 3.12%</td>
+                            <td>24.5M</td>
+                            <td>$1.24T</td>
+                            <td>
+                                <a href="{% url 'stock_predictor' %}?symbol=META" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-chart-line me-1"></i>Analiz Et
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>MSFT</strong>
+                                <br>
+                                <small class="text-muted">Microsoft Corp.</small>
+                            </td>
+                            <td>$415.32</td>
+                            <td class="text-success">↑ 1.87%</td>
+                            <td>22.1M</td>
+                            <td>$3.09T</td>
+                            <td>
+                                <a href="{% url 'stock_predictor' %}?symbol=MSFT" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-chart-line me-1"></i>Analiz Et
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>GOOGL</strong>
+                                <br>
+                                <small class="text-muted">Alphabet Inc.</small>
+                            </td>
+                            <td>$142.56</td>
+                            <td class="text-danger">↓ 0.45%</td>
+                            <td>18.9M</td>
+                            <td>$1.79T</td>
+                            <td>
+                                <a href="{% url 'stock_predictor' %}?symbol=GOOGL" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-chart-line me-1"></i>Analiz Et
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>NVDA</strong>
+                                <br>
+                                <small class="text-muted">NVIDIA Corp.</small>
+                            </td>
+                            <td>$903.63</td>
+                            <td class="text-success">↑ 4.78%</td>
+                            <td>45.2M</td>
+                            <td>$2.23T</td>
+                            <td>
+                                <a href="{% url 'stock_predictor' %}?symbol=NVDA" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-chart-line me-1"></i>Analiz Et
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>LMT</strong>
+                                <br>
+                                <small class="text-muted">Lockheed Martin</small>
+                            </td>
+                            <td>$458.21</td>
+                            <td class="text-success">↑ 1.56%</td>
+                            <td>1.2M</td>
+                            <td>$112.4B</td>
+                            <td>
+                                <a href="{% url 'stock_predictor' %}?symbol=LMT" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-chart-line me-1"></i>Analiz Et
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>NOC</strong>
+                                <br>
+                                <small class="text-muted">Northrop Grumman</small>
+                            </td>
+                            <td>$458.32</td>
+                            <td class="text-danger">↓ 0.89%</td>
+                            <td>0.8M</td>
+                            <td>$69.5B</td>
+                            <td>
+                                <a href="{% url 'stock_predictor' %}?symbol=NOC" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-chart-line me-1"></i>Analiz Et
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>RTX</strong>
+                                <br>
+                                <small class="text-muted">Raytheon Technologies</small>
+                            </td>
+                            <td>$92.45</td>
+                            <td class="text-success">↑ 2.34%</td>
+                            <td>5.6M</td>
+                            <td>$138.7B</td>
+                            <td>
+                                <a href="{% url 'stock_predictor' %}?symbol=RTX" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-chart-line me-1"></i>Analiz Et
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>GE</strong>
+                                <br>
+                                <small class="text-muted">General Electric</small>
+                            </td>
+                            <td>$156.78</td>
+                            <td class="text-success">↑ 3.12%</td>
+                            <td>8.9M</td>
+                            <td>$171.2B</td>
+                            <td>
+                                <a href="{% url 'stock_predictor' %}?symbol=GE" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-chart-line me-1"></i>Analiz Et
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
